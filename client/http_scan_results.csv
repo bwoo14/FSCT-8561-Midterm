@@ -1,0 +1,9 @@
+endpoint,status_code,http_method,content_type,response_length,payload,server_header
+/,200,GET,text/html; charset=utf-8,90,,FSCT8561LabHTTP/1.0 
+/health,200,GET,text/plain,2,,FSCT8561LabHTTP/1.0 
+/redirect,302,GET,,0,,FSCT8561LabHTTP/1.0 
+/missing,404,GET,text/plain,9,,FSCT8561LabHTTP/1.0 
+/,501,POST,text/html;charset=utf-8,482,{'q': 'apple'},FSCT8561LabHTTP/1.0 
+/health,501,POST,text/html;charset=utf-8,482,{'q': 'apple'},FSCT8561LabHTTP/1.0 
+/redirect,501,POST,text/html;charset=utf-8,482,{'q': 'apple'},FSCT8561LabHTTP/1.0 
+/missing,501,POST,text/html;charset=utf-8,482,{'q': 'apple'},FSCT8561LabHTTP/1.0 
