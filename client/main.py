@@ -8,8 +8,10 @@ from handle_command import handle_command
 HOST = "127.0.0.1"
 PORT = 12345
 
+# Session object to store session ID
 SESSION = {"session_id": ""}
 
+# Menu dict corresponding number inputs to commands
 menu_dict = {
 	"1": "SCAN",
 	"2": "WEB",
@@ -18,6 +20,7 @@ menu_dict = {
 	"5": "EXIT"
 }
 
+# Template for menu to be displayed for user
 MENU_TEMPLATE = """
 Enter one of the following:
 
@@ -36,27 +39,30 @@ try:
 		socket.SOCK_STREAM	# Use TCP
 	)
 
+	
 	# Connect to remote server
 	client_socket.connect((HOST, PORT))
 
+	# Begin password authentication requests using helper function
 	password_authenticated = False
 	password_authenticated = auth_password(client_socket)
 
+	# Begin OTP authentication using Helpder function 
 	otp_authenticated = False
 	otp_authenticated = auth_mfa(client_socket, SESSION)
 
-
+	# Maintain connection using While loop
 	while True:
 		# Prompt user for message to send
 		command_selection = input(
 			MENU_TEMPLATE
 		)
-		try:
+		try: # Ensure valid command selection
 			command = menu_dict[command_selection]
-		except:
+		except: # If not, continue loop from start
 			print("Invalid Option")
 			continue
-
+		
 
 		# Check if message is "EXIT"; if yes, terminate connection
 		if command.upper() == "EXIT":
@@ -69,10 +75,18 @@ try:
 			# Break loop
 			break
 		else:
+			#  send command to helper function to be sent to server
 			message = handle_command(command, client_socket, SESSION)
-except ConnectionRefusedError:
-	print("ERROR: Couldn't establish a connection to the target machine - closing")
 
+# Handle case for offline server
+except ConnectionRefusedError:
+	print("\nERROR: Couldn't establish a connection to the target machine - closing")
+
+# handle case if server goes offline
+except ConnectionResetError:
+	print("\nERROR: Connection to the target machine was terminated - closing")
+
+# Handle case if user terminates program
 except KeyboardInterrupt:
 	print("\nINFO: Program terminated by user")
 # Close connection

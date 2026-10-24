@@ -8,8 +8,7 @@ from handle_command import authenticate_commands
 HOST = "127.0.0.1"
 PORT = 12345
 
-# secret = pyotp.random_base32()
-# print(f"Secret: {secret}")
+# Secret hard coded for usability - NOT MEANT FOR PRODUCTION
 secret = "JRATOCVUTNQESGNCSPUC5WHKQAEO3BXJ"
 USERS = {
 	"brandon": {
@@ -57,7 +56,7 @@ while connected:
 		elif "OTP" in message:
 			logging("INFO", f"Received MFA 6 Digit code (OTP) request from {client_address}")
 		else:
-			logging("INFO", f"Received -- {message} -- from {client_address}")
+			logging("INFO", f"Received -- {message.split("|", 1)[0]} -- from {client_address}")
 
 		# Input Data Validation
 		if "|" not in message:
@@ -70,43 +69,65 @@ while connected:
 		# Split data by delimiter "|"
 		command, content = message.split("|", 1)
 
+		# Handle auth command, pass to helper function
 		if command == "AUTH":
-			if content == "":
+			if content == "": # Handle malformed request
 					client_socket.send(
-						"ERROR|Authentication Failed".encode()
+						"AUTH_ERROR|Authentication Failed".encode()
 					)
-			else:
+			else: # Call helper function
 				username = auth_loop(client_socket, client_address, content, USERS)
 			
-		
+		# Handle OTP Command
 		elif command == "OTP":
-			otp_authenticated = False
-			if content == "":
-					client_socket.send(
-						"ERROR|Authentication Failed".encode()
-					)
-			else:
-				otp_loop(client_socket, client_address, content, USERS, username)
+			try:
+				otp_authenticated = False
+				if content == "": # Handle malformed request
+						client_socket.send(
+							"AUTH_ERROR|Authentication Failed".encode()
+						)
+				else: # Call otp_loop helper function
+					otp_loop(client_socket, client_address, content, USERS, username)
+			except:
+				logging("INFO", f"{client_address} sent OTP before AUTH")
+				client_socket.send("AUTH_ERROR|Access Denied - Authenticate with username/password before OTP".encode())
 
+		# Handle client disconnect
 		elif command == "EXIT":
 			# Confirm connection termination
 			client_socket.send(
 				"OK|Goodbye".encode()
 			)
-			# Terminate connection
+			# Terminate authentication session. Invalidate session token
 			USERS[username]["authenticated"] = False
 			USERS[username]["password_verified"] = False
 			USERS[username]["session_id"] = None
 			connected = False
 
 		else:
+			# Handle other commands using helper function authenticate_commands
 			if USERS[username]["authenticated"]:
 				authenticate_commands(client_socket, client_address, command, content, USERS, username)
 			else:
 				logging("ERROR", f"Command authentication failed from {client_address}")
-				client_socket.send("ERROR|Unauthenticated Command".encode())
+				client_socket.send("AUTH_ERROR|Unauthenticated Command".encode())
 			
-
+	# Handle reset connection error
 	except ConnectionResetError:
 		print("Connection reset by client")
 		break
+	# Handle key error, caused by unauthenticated command
+	except NameError:
+		logging("INFO", f"{client_address} Sent request without username")
+		client_socket.send("AUTH_ERROR|Unauthenticated Command".encode())
+
+	# Handle forced shutdown
+	except KeyboardInterrupt as e:
+		logging("INFO", e)
+		logging("INFO", "Shutting down")
+
+# Close sockets
+client_socket.close()
+server_socket.close()
+
+print("Server closed")

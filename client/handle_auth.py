@@ -1,7 +1,7 @@
 import getpass
 from getpass import getpass
-import hashlib
 
+# Helper function to send auth request to server
 def auth_password(client_socket):
 	password_authenticated = False
 	while not password_authenticated:
@@ -31,11 +31,14 @@ def auth_password(client_socket):
 		# Decode and print the response from the server
 		print("Server:", response.decode())
 
+		# Handle successful response from server
 		if "OTP_REQUIRED" in response.decode():
 			return True
 
+# Helper function to handle MFA request to server
 def auth_mfa(client_socket, session):
 	otp_authenticated = False
+	# While loop to continuously send TOTP if request fails
 	while not otp_authenticated:
 		# Prompt user for TOTP Code
 		otp = input("Enter your TOTP Code: ")
@@ -53,6 +56,7 @@ def auth_mfa(client_socket, session):
 		# Decode and print the response from the server
 		print("Server:", response.decode())
 
+		# Handle successful login by saving session ID
 		if not ("ACCESS DENIED" in response.decode()):
 			session["session_id"] = client_socket.recv(1024).decode()
 			return True

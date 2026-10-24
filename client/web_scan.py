@@ -89,10 +89,6 @@ def http_scan():
 		if response_summary:
 			records.append(response_summary)
 
-	# Sending purposefully misformed request
-	# response_summary = send_request("GET",  "http://localhost:300")
-	# if response_summary:
-	# 	records.append(response_summary)
 
 	# Record csv
 	to_csv(records)

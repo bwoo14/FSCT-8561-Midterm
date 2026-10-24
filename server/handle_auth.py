@@ -78,20 +78,16 @@ def auth_loop(client_socket, client_address, content, users):
 
 def otp_loop(client_socket, client_address, content, users, username):
 	otp = content
-	# client_socket.send(f"OK|ACCESS GRANTED".encode())
-	# users[username]["authenticated"] = True
-
-	# users[username]["session_id"] = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-	# client_socket.send(users[username]["session_id"].encode())
-
 
 	try:
+		# Lock account if authentication requests exceeds 3
 		if users[username]["login_attempts"] > LOGIN_ATTEMPT_MAX - 1:
 			users[username]["locked"] = True
 			logging("ERROR", f"{username} account is now locked")
 		else:
 			logging("INFO", f"Authenticating: {username}")
 
+		# If account locked, stop the request and inform the user
 		if users[username]["locked"]:
 			logging("ERROR", f"Too many failed attempts. Authentication blocked for {client_address}")
 			client_socket.send("AUTH_ERROR|ACCESS DENIED - Too many failed attempts. Authentication blocked.".encode())
@@ -110,20 +106,22 @@ def otp_loop(client_socket, client_address, content, users, username):
 				# Create session_id to use for authentication
 				client_socket.send(f"OK|ACCESS GRANTED".encode())
 
+				# create session id and send to client
 				users[username]["session_id"] = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 				client_socket.send(users[username]["session_id"].encode())
 				
 			else:
+				# inform user of failed OTP
 				logging("INFO", f"Incorrect OTP Code from {username} on {client_address}")
 				client_socket.send(f"ERROR|ACCESS DENIED - Incorrect OTP".encode())
-				# Increase failed login for 
+				# Increase failed login attempts
 				users[username]["login_attempts"] += 1
 				logging("INFO", f"{client_address} login attempts remaining: {3 - users[username]["login_attempts"]}")
 		else:
 			# If user not password verified, tell user to sign in with username and password first
 			logging("INFO", f"{client_address} tried signing in without username and password first")
 			client_socket.send(f"ERROR|You must sign in with username and password before entering your OTP".encode())
-	except KeyError:
+	except KeyError: # Handle error for username, means the user didn't send a AUTH request before OTP 
 		logging("INFO", f"{client_address} tried signing in without username and password first")
 		client_socket.send(f"ERROR|You must sign in with username and password before entering your OTP".encode())
 

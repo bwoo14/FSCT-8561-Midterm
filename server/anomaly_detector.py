@@ -65,6 +65,7 @@ def anomaly_detector(pcap_file):
 		"""
 		)
 		return {
+			"PCAP Name": pcap_file,
 			"TCP Packets": tcp_count,
 			"UDP Packets": udp_count,
 			"Suspicious IPs Amount": len(alerted_ips),

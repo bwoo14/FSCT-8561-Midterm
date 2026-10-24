@@ -75,3 +75,5 @@ def tcp_scan():
 				print(f"{port:<10} {results[port]["state"]:<10} {results[port]["name"]}")
 	print()
 	print("Scan Complete.")
+
+	
